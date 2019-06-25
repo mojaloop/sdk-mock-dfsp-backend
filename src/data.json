@@ -1,0 +1,18 @@
+{
+    "participants": {
+        "mojaloop-sdk": "http://1.2.3.4:3000"
+    },
+    "parties": {
+        "MSISDN": {
+            "123456789": {
+                "type": "CONSUMER",
+                "displayName": "John Doe",
+                "firstName": "John",
+                "middleName": "Someone",
+                "lastName": "Doe",
+                "dateOfBirth": "1980-01-01",
+                "merchantClassificationCode": "1234"
+            }
+        }
+    }
+}

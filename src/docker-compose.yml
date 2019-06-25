@@ -1,0 +1,16 @@
+version: '3'
+services:
+  redis:
+    image: "redis:5.0.4-alpine"
+
+  backend:
+    image: "modusbox/mojaloop-sdk-mock-dfsp-backend"
+    env_file: ./backend.env
+    depends_on:
+      - scheme-adapter
+
+  scheme-adapter:
+    image: "modusbox/mojaloop-sdk-scheme-adapter:latest"
+    env_file: ./scheme-adapter.env
+    depends_on:
+      - redis
