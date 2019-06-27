@@ -5,6 +5,8 @@
     "parties": {
         "MSISDN": {
             "123456789": {
+                "idType": "MSISDN",
+                "idValue": "123456789",
                 "type": "CONSUMER",
                 "displayName": "John Doe",
                 "firstName": "John",
@@ -14,6 +16,8 @@
                 "merchantClassificationCode": "1234"
             },
             "987654321": {
+                "idType": "MSISDN",
+                "idValue": "987654321",
                 "type": "CONSUMER",
                 "displayName": "Jane Doe",
                 "firstName": "Jane",
