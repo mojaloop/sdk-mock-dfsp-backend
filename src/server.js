@@ -12,49 +12,74 @@
 
 const util = require('util');
 const express = require('express');
-const fetch = require('node-fetch');
-const Crypto = require('crypto');
-const base64url = require('base64url');
+const request = require('request-promise-native');
 
 const app = express();
-const port = process.env['LISTEN_PORT'] || 3000;
+const listenPort = process.env['LISTEN_PORT'] || 3000;
+const outboundEndpoint = process.env['OUTBOUND_ENDPOINT'] || 'http://scheme-adapter:4001';
 
-const { participants, parties } = require('./data.json');
+const { parties } = require('./data.json');
 let homeTransactionId = 1000000;
 
+
+/**
+ * Look for JSON bodies on all incoming requests
+ */
 app.use(express.json({ type: '*/*'}));
 
-//log all requests
+
+/**
+ * Log all requests
+ */
 app.use((req, res, next) => {
-    console.log(`${Date.now()} ${req.method} ${req.originalUrl}`);
-    console.log(`${util.inspect(req.headers)}`);    
+    console.log(`Request received: ${Date.now()} ${req.method} ${req.originalUrl}`);
+    console.log(`Request headers: ${util.inspect(req.headers)}`);
 
     if(req.body) {
-        console.log(`${util.inspect(req.body, { depth: 10 })}`);
+        console.log(`Request body: ${util.inspect(req.body, { depth: 10 })}`);
     }
     return next();
 });
 
 
-//health check endpoint
+/**
+ * Health check endpoint e.g. for Kubernetes
+ */
 app.get('/', (req, res) => {
     //return 200
     res.status(200).end();
 });
 
 
+/**
+ * Handle get parties request. This method is called by the SDK to perform
+ * party lookups in the backend. In this mock we have a static set of party
+ * data loaded from a local JSON file.
+ */
 app.get('/parties/:idType/:idValue', async (req, res) => {
+    console.log(`Party lookup received for ${req.params.idType} ${req.params.idValue}`);
+
     const party = parties[req.params.idType][req.params.idValue];
     if(party) {
+        console.log(`Returning party: ${util.inspect(party)}`);
+
         return res.send(party);
     }
 
+    console.log('Party not found');
     res.status(404).end();
 });
 
 
+/**
+ * Handle post quote request. This method is called by the SDK to perform
+ * a quote request. This gives our backend an opportunity to charge fees
+ * for accepting a particular transfer.
+ */
 app.post('/quoterequests', async (req, res) => {
     // always return zero fees
+    console.log(`Quote request received: ${util.inspect(req.body)}`);
+
     res.send({
         quoteId: req.body.quoteId,
         transactionId: req.body.transactionId,
@@ -67,45 +92,88 @@ app.post('/quoterequests', async (req, res) => {
 });
 
 
+/**
+ * Handle post transfers request. This method is called by the SDK to inform the
+ * backend of an incoming money transfer. This is called when a transfer has been
+ * successfully received by the SDK.
+ */
 app.post('/transfers', async (req, res) => {
-    // just increment homeTransactionId
+    // just increment homeTransactionId to simulate a backend creating a
+    // transaction to put the incoming funds in the payee acount.
+    console.log(`Incoming transfer received: ${util.inspect(req.body)}`);
+
     res.send({
         homeTransactionId: `${homeTransactionId++}`
     });
 });
 
 
+/**
+ * Handle post send request. This method allows us to simulate outgoing transfers
+ * from a DFSP backend.
+ */
 app.post('/send', async (req, res) => {
+    console.log(`Request to send outgoing transfer: ${util.inspect(req.body)}`);
 
+    const reqOpts = {
+        method: 'POST',
+        uri: `${outboundEndpoint}/transfers`,
+        headers: buildHeaders(),
+        body: req.body,
+        json: true
+    };
+
+    try {
+        console.log(`Executing HTTP POST: ${util.inspect(reqOpts)}`);
+        const result = await request(reqOpts);
+        res.send(result);
+    }
+    catch(err) {
+        console.log(`Error: ${err.stack || util.inspect(err)}`);
+        res.send({
+            message: err.message || 'An error occured'
+        });
+        res.status(500).end();
+    }
 });
 
 
-// default 404 for unhandled routes
+/**
+ * Return 404 for non handled routes
+ */
 app.use((req, res) => {
+    console.log(`Path not supported: ${req.originalUrl}`);
     res.status(404).end();
 });
 
 
-//start the server
-const server = app.listen(port, () => {
-    console.log(`Listening on port ${port}`);
+/**
+ * Start the server
+ */
+const server = app.listen(listenPort, () => {
+    console.log(`Listening on port ${listenPort}`);
 });
 
 
-const buildHeaders = (resourceType, source, dest) => {
+/**
+ * Utility method to build a set of headers required by the SDK outbound API
+ *
+ * @returns {object} - Object containing key/value pairs of HTTP headers
+ */
+const buildHeaders = () => {
     let headers = {
-        'Content-Type': `application/json`,
-        'Accept': `application/json`,
-        'Date': new Date().toUTCString(),
-        'User-Agent': 'Mojaloop SDK'  //node-fetch INSISTS on sending a user-agent header!? infuriating!
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Date': new Date().toUTCString()
     };
 
     return headers;
-}
+};
 
 
-//shutdown gracefully on SIGTERM
+/**
+ * Shutdown gracefully on SIGTERM
+ */
 process.on('SIGTERM', () => {
     server.close();
 });
-
