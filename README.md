@@ -15,6 +15,6 @@ cd src
 docker-compose up
 ```
 
-For information on the Mojaloop SDK simplified DFSP backend API please see the openapi specification [here](https://github.com/modusbox/mojaloop-sdk-scheme-adapter/blob/master/docs/dfspInboundApi.yaml)
+For information on the Mojaloop SDK simplified DFSP backend API please see the openapi specification [here](https://github.com/mojaloop/sdk-scheme-adapter/blob/master/docs/dfspInboundApi.yaml)
 
-This package is available as a pre-built docker image on Docker Hub: [https://hub.docker.com/r/modusbox/mojaloop-sdk-mock-dfsp-backend](https://hub.docker.com/r/modusbox/mojaloop-sdk-mock-dfsp-backend)
+This package is available as a pre-built docker image on Docker Hub: [https://hub.docker.com/r/mojaloop/sdk-mock-dfsp-backend](https://hub.docker.com/r/mojaloop/sdk-mock-dfsp-backend)
