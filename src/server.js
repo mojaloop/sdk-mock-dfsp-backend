@@ -20,6 +20,7 @@ const outboundEndpoint = process.env['OUTBOUND_ENDPOINT'] || 'http://scheme-adap
 
 const { parties } = require('./data.json');
 let homeTransactionId = 1000000;
+const QUOTE_EXPIRY_SECONDS = 10;
 
 
 /**
@@ -87,7 +88,7 @@ app.post('/quoterequests', async (req, res) => {
         transferAmountCurrency: req.body.currency,
         payeeReceiveAmount: req.body.amount,
         payeeReceiveAmountCurrency: req.body.currency,
-        expiration: new Date().toISOString(),
+        expiration: new Date(new Date().getTime() + QUOTE_EXPIRY_SECONDS * 1e3).toISOString(),
     });
 });
 
