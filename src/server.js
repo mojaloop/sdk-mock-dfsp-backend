@@ -79,16 +79,16 @@ app.get('/parties/:idType/:idValue', async (req, res) => {
 app.post('/quoterequests', async (req, res) => {
     // always return zero fees
     console.log(`Quote request received: ${util.inspect(req.body)}`);
-
-    res.send({
+    const response = {
         quoteId: req.body.quoteId,
         transactionId: req.body.transactionId,
         transferAmount: req.body.amount,
         transferAmountCurrency: req.body.currency,
         payeeReceiveAmount: req.body.amount,
         payeeReceiveAmountCurrency: req.body.currency,
-        expiration: new Date().toISOString(),
-    });
+    }
+    if (req.body.expiration) response.expiration = req.body.expiration;
+    res.send(response);
 });
 
 
